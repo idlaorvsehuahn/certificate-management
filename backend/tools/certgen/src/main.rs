@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(certs_dir.join("ca.key"), &ca_key_pem)?;
 
     // Helper to generate and sign cert
-    let mut generate_signed_cert = |common_name: &str, san_names: Vec<String>, filename_prefix: &str| -> Result<(), Box<dyn std::error::Error>> {
+    let generate_signed_cert = |common_name: &str, san_names: Vec<String>, filename_prefix: &str| -> Result<(), Box<dyn std::error::Error>> {
         println!("Generating certificate for {}...", common_name);
         let mut params = CertificateParams::new(san_names);
         params.distinguished_name = DistinguishedName::new();

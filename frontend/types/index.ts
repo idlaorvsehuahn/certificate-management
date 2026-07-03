@@ -49,6 +49,7 @@ export interface CertificateResponse {
   expiration: string;
   san_dns_names: string[];
   pem: string;
+  parsed?: ParsedCertificateResponse;
 }
 
 export interface IssueCertificateResponse {
@@ -56,4 +57,28 @@ export interface IssueCertificateResponse {
   certificate_pem: string;
   private_key_pem: string;
   warning: string;
+}
+
+export interface ParsedCertificateResponse {
+  subject: string;
+  issuer: string;
+  version: number;
+  serial_number: string;
+  signature_algorithm: string;
+  not_before: string;
+  not_after: string;
+  days_remaining: number;
+  expiration_status: string;
+  public_key_algorithm: string;
+  key_size: number;
+  sha1_fingerprint: string;
+  sha256_fingerprint: string;
+  is_ca: boolean;
+  path_len_constraint?: number;
+  key_usages: string[];
+  extended_key_usages: string[];
+  san_dns_names: string[];
+  san_ips: string[];
+  san_emails: string[];
+  pem: string;
 }

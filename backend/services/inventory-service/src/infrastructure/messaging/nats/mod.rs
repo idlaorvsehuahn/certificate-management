@@ -17,26 +17,22 @@ pub async fn run_nats_subscriber(
         let payload = message.payload;
 
         match serde_json::from_slice::<shared::events::DomainEvent>(&payload) {
-            Ok(event) => {
-                match event {
-                    shared::events::DomainEvent::CertificateIssued(issued_event) => {
-                        let summary = InventorySummaryResponse {
-                            id: issued_event.certificate_id,
-                            subject: issued_event.subject,
-                            issuer: issued_event.issuer,
-                            status: issued_event.status,
-                            expires_at: issued_event.expires_at,
-                            created_at: issued_event.created_at,
-                        };
+            Ok(shared::events::DomainEvent::CertificateIssued(issued_event)) => {
+                let summary = InventorySummaryResponse {
+                    id: issued_event.certificate_id,
+                    subject: issued_event.subject,
+                    issuer: issued_event.issuer,
+                    status: issued_event.status,
+                    expires_at: issued_event.expires_at,
+                    created_at: issued_event.created_at,
+                };
 
-                        tracing::info!(id = %summary.id, "Received certificate.issued event via NATS");
+                tracing::info!(id = %summary.id, "Received certificate.issued event via NATS");
 
-                        if let Err(e) = service.upsert_certificate(summary).await {
-                            tracing::error!(error = %e, "Failed to upsert certificate in inventory service");
-                        } else {
-                            tracing::info!(id = %issued_event.certificate_id, "Successfully stored read model for certificate");
-                        }
-                    }
+                if let Err(e) = service.upsert_certificate(summary).await {
+                    tracing::error!(error = %e, "Failed to upsert certificate in inventory service");
+                } else {
+                    tracing::info!(id = %issued_event.certificate_id, "Successfully stored read model for certificate");
                 }
             }
             Err(e) => {

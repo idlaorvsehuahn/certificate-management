@@ -1,6 +1,6 @@
 use axum::{
     Router,
-    routing::get,
+    routing::{get, post},
 };
 use tower_http::{
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
@@ -27,6 +27,8 @@ pub fn build_router(state: AppState) -> Router {
             "/certificates",
             get(certificates::list_certificates).post(certificates::issue_certificate),
         )
+        .route("/certificates/parse", post(certificates::parse_certificate))
+        .route("/certificates/import", post(certificates::import_certificate))
         .route("/certificates/{id}", get(certificates::get_certificate))
         .route("/metrics", get(shared::telemetry::metrics::metrics_handler))
         .with_state(state)

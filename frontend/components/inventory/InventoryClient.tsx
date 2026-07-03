@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { inventoryApi } from '../../services/inventory-api';
 import { DashboardStats } from '../dashboard/DashboardStats';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/table';
+import { formatUtcDateShort } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -96,13 +97,7 @@ export function InventoryClient({ initialStats, initialData }: InventoryClientPr
     });
   };
 
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    const yyyy = date.getUTCFullYear();
-    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(date.getUTCDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
+  const formatDate = formatUtcDateShort;
 
   return (
     <div className="flex flex-col gap-6 w-full">

@@ -299,10 +299,14 @@ dependencies = [
 name = "ca-engine"
 version = "0.1.0"
 dependencies = [
+ "base64 0.21.7",
  "chrono",
  "rcgen",
+ "ring",
+ "serde",
  "thiserror 1.0.69",
  "time",
+ "x509-parser",
 ]
 
 [[package]]

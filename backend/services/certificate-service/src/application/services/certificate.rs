@@ -4,10 +4,12 @@ use uuid::Uuid;
 
 use ca_engine::{CertificateGenerator, CertificateInput};
 use shared::events::{CertificateIssuedEvent, DomainEvent};
+use shared::utils::{total_pages, validate_list_query};
 use crate::{
     dto::certificate::{
         CertificateListQuery, CertificateListResponse, CertificateResponse, CertificateStatus,
         IssueCertificateRequest, IssueCertificateResponse, CertificateSummaryResponse,
+        ParseCertificateRequest, ParsedCertificateResponse, ImportCertificateRequest,
     },
     error::{AppError, AppResult},
     ports::{
@@ -82,6 +84,7 @@ where
             status: CertificateStatus::Active,
             san_dns_names: generated.san_dns_names,
             pem: generated.pem,
+            parsed: None,
         };
 
         // Persist to Postgres (commits transaction)
@@ -130,10 +133,91 @@ where
     }
 
     pub async fn get_certificate(&self, id: Uuid) -> AppResult<CertificateResponse> {
-        self.repository
+        let mut response = self.repository
             .find_by_id(id)
             .await?
-            .ok_or_else(|| AppError::NotFound(format!("certificate {id}")))
+            .ok_or_else(|| AppError::NotFound(format!("certificate {id}")))?;
+
+        // Attempt to parse the stored PEM on-the-fly to populate cryptographic metadata details
+        if let Ok(parsed_cert) = ca_engine::parse_certificate(response.pem.as_bytes()) {
+            response.parsed = Some(ParsedCertificateResponse::from(parsed_cert));
+        }
+
+        Ok(response)
+    }
+
+    pub async fn parse_certificate(
+        &self,
+        request: ParseCertificateRequest,
+    ) -> AppResult<ParsedCertificateResponse> {
+        let parsed = ca_engine::parse_certificate(request.pem.as_bytes())
+            .map_err(|e| AppError::Validation(format!("Invalid certificate format: {}", e)))?;
+        Ok(ParsedCertificateResponse::from(parsed))
+    }
+
+    pub async fn import_certificate(
+        &self,
+        request: ImportCertificateRequest,
+    ) -> AppResult<CertificateResponse> {
+        // Parse and validate the PEM again for server-side integrity
+        let parsed = ca_engine::parse_certificate(request.pem.as_bytes())
+            .map_err(|e| AppError::Validation(format!("Invalid certificate format: {}", e)))?;
+
+        let id = Uuid::new_v4();
+        
+        let status = match parsed.expiration_status.as_str() {
+            "Expired" => CertificateStatus::Expired,
+            _ => CertificateStatus::Active,
+        };
+
+        let response = CertificateResponse {
+            id,
+            subject: parsed.subject,
+            issuer: parsed.issuer,
+            serial_number: parsed.serial_number,
+            issued_at: parsed.not_before,
+            expiration: parsed.not_after,
+            status,
+            san_dns_names: parsed.san_dns_names,
+            pem: parsed.pem,
+            parsed: None,
+        };
+
+        // Persist to Postgres
+        if let Err(e) = self.repository.create(&response).await {
+            if let AppError::Database(sqlx::Error::Database(ref db_err)) = e {
+                if db_err.code().as_deref() == Some("23505") {
+                    return Err(AppError::Validation(format!(
+                        "Certificate with serial number '{}' has already been imported",
+                        response.serial_number
+                    )));
+                }
+            }
+            return Err(e);
+        }
+
+        // Construct Domain Event
+        let event = DomainEvent::CertificateIssued(CertificateIssuedEvent {
+            certificate_id: response.id,
+            subject: response.subject.clone(),
+            issuer: response.issuer.clone(),
+            status: response.status.clone(),
+            expires_at: response.expiration,
+            created_at: response.issued_at,
+        });
+
+        // Publish to NATS after transaction commits successfully
+        let publisher = self.publisher.clone();
+        let response_id = response.id;
+        tokio::spawn(async move {
+            if let Err(e) = publisher.publish(&event).await {
+                tracing::error!(error = %e, "Failed to publish certificate.issued event to NATS");
+            } else {
+                tracing::info!(id = %response_id, "Successfully published event to NATS");
+            }
+        });
+
+        Ok(response)
     }
 
     pub async fn list_certificates(
@@ -142,7 +226,7 @@ where
     ) -> AppResult<CertificateListResponse> {
         let page = query.page.unwrap_or(DEFAULT_PAGE);
         let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-        validate_list_query(page, page_size)?;
+        validate_list_query(page, page_size, MAX_PAGE_SIZE).map_err(AppError::Validation)?;
 
         let filter = CertificateListFilter {
             status: query.status,
@@ -202,29 +286,7 @@ fn normalized_sans(request: &IssueCertificateRequest) -> Vec<String> {
     request.san_dns_names.clone()
 }
 
-fn validate_list_query(page: u32, page_size: u32) -> AppResult<()> {
-    if page == 0 {
-        return Err(AppError::Validation(
-            "page must be greater than 0".to_string(),
-        ));
-    }
 
-    if page_size == 0 || page_size > MAX_PAGE_SIZE {
-        return Err(AppError::Validation(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
-
-    Ok(())
-}
-
-fn total_pages(total_items: i64, page_size: u32) -> u32 {
-    if total_items == 0 {
-        return 0;
-    }
-
-    ((total_items as f64) / f64::from(page_size)).ceil() as u32
-}
 
 #[cfg(test)]
 mod tests {

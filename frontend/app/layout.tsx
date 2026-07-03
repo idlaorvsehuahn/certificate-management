@@ -3,6 +3,8 @@ import './globals.css';
 import Providers from './providers';
 import Link from 'next/link';
 
+import { HeaderNav } from '../components/ui/HeaderNav';
+
 export const metadata: Metadata = {
   title: 'Arkion — Certificate Management Platform',
   description: 'Non-Human Identity Governance and Certificate Management Platform',
@@ -35,20 +37,7 @@ export default function RootLayout({
               </Link>
 
               {/* Navigation Links */}
-              <nav className="flex items-center gap-8">
-                <Link
-                  href="/inventory"
-                  className="text-xs uppercase tracking-widest text-cream/70 hover:text-gold transition-colors font-medium"
-                >
-                  Inventory
-                </Link>
-                <Link
-                  href="/certificates/new"
-                  className="text-xs uppercase tracking-widest text-cream/70 hover:text-gold transition-colors font-medium"
-                >
-                  Issue Certificate
-                </Link>
-              </nav>
+              <HeaderNav />
 
               {/* Tag / Version */}
               <div className="hidden sm:flex items-center gap-2 text-[10px] text-cream/40 tracking-wider uppercase font-mono">

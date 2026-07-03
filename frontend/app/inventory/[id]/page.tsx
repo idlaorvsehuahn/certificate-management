@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { ArrowLeft, Shield, Calendar, Key, AlertTriangle, Cpu } from 'lucide-react';
+import { formatUtcDate } from '../../../lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,15 +28,7 @@ export default async function CertificateDetailPage({ params }: PageProps) {
     fetchError = error.message || 'Identity not found or network connection failed.';
   }
 
-  const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const formatDate = formatUtcDate;
 
   // Parse details using Node.js native X509Certificate class
   let sha256Fingerprint = 'N/A';

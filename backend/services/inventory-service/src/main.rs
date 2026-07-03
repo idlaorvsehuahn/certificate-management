@@ -42,23 +42,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let certs = app::load_certs(&config.tls.cert_path)?;
         let key = app::load_key(&config.tls.key_path)?;
 
-        // Build CA trust store for client cert verification (mTLS) - since we only allow optional client auth
-        let ca_file = std::fs::File::open(&config.tls.ca_cert_path)?;
-        let mut ca_reader = std::io::BufReader::new(ca_file);
-        let ca_certs = rustls_pemfile::certs(&mut ca_reader)
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let mut root_store = rustls::RootCertStore::empty();
-        for cert in ca_certs {
-            root_store.add(cert)?;
-        }
-
-        let client_verifier = rustls::server::WebPkiClientVerifier::builder(std::sync::Arc::new(root_store))
-            .allow_unauthenticated()
-            .build()?;
-
         let server_config = rustls::ServerConfig::builder()
-            .with_client_cert_verifier(client_verifier)
+            .with_no_client_auth()
             .with_single_cert(certs, key)
             .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidInput, err))?;
 
