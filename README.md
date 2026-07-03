@@ -33,7 +33,7 @@ graph TD
     Client[Client / API Gateway] -->|HTTPS| CertRouter[Certificate Service]
     Client -->|HTTPS| InvRouter[Inventory Service]
     
-    subgraph Certificate Service (Write Path)
+    subgraph "Certificate Service (Write Path)"
         CertRouter --> CertHandlers[HTTP Handlers]
         CertHandlers --> CertSvc[Certificate Service Logic]
         CertSvc --> CertRepo[Postgres Certificate Repository]
@@ -43,7 +43,7 @@ graph TD
     
     NatsPub -->|Subject: certificate.issued| NatsBroker((NATS Message Broker))
     
-    subgraph Inventory Service (Read Path / Projection)
+    subgraph "Inventory Service (Read Path / Projection)"
         NatsBroker -->|Subscribe| NatsSub[NATS Subscriber]
         NatsSub -->|Async Project| InvSvc[Inventory Service Logic]
         InvSvc --> InvRepo[Postgres Inventory Repository]
@@ -54,7 +54,7 @@ graph TD
         InvRepo -->|Read Projections| InvDB
     end
     
-    subgraph Shared Library (Common Code)
+    subgraph "Shared Library (Common Code)"
         shared_tls[TLS/HTTPS Layer]
         shared_metrics[Prometheus Middleware]
         shared_telemetry[Tracing Setup]
