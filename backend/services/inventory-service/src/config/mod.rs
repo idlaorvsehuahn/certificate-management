@@ -26,9 +26,9 @@ impl AppConfig {
             .set_default("telemetry.log_level", "info")?
             .set_default("telemetry.json_logs", false)?
             .set_default("tls.enabled", true)?
-            .set_default("tls.cert_path", "deploy/certs/inventory-service.crt")?
-            .set_default("tls.key_path", "deploy/certs/inventory-service.key")?
-            .set_default("tls.ca_cert_path", "deploy/certs/ca.crt")?
+            .set_default("tls.cert_path", "certs/inventory-service.crt")?
+            .set_default("tls.key_path", "certs/inventory-service.key")?
+            .set_default("tls.ca_cert_path", "certs/ca.crt")?
             .set_default("nats.url", "nats://localhost:4222")?
             .add_source(
                 ::config::Environment::with_prefix("INVENTORY_SERVICE")

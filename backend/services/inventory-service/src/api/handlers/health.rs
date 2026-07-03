@@ -10,17 +10,9 @@ pub struct HealthResponse {
     version: String,
 }
 
-pub async fn liveness(State(state): State<AppState>) -> AppResult<Json<HealthResponse>> {
+pub async fn health_check(State(state): State<AppState>) -> AppResult<Json<HealthResponse>> {
     Ok(Json(HealthResponse {
         status: "ok",
-        service: state.config.service.name.clone(),
-        version: state.config.service.version.clone(),
-    }))
-}
-
-pub async fn readiness(State(state): State<AppState>) -> AppResult<Json<HealthResponse>> {
-    Ok(Json(HealthResponse {
-        status: "ready",
         service: state.config.service.name.clone(),
         version: state.config.service.version.clone(),
     }))

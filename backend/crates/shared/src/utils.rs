@@ -16,7 +16,7 @@ pub fn validate_list_query(page: u32, page_size: u32, max_page_size: u32) -> Res
 
 /// Calculates the total pages count based on total items and page size.
 pub fn total_pages(total_items: i64, page_size: u32) -> u32 {
-    if total_items == 0 {
+    if total_items <= 0 || page_size == 0 {
         return 0;
     }
 

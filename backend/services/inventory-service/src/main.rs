@@ -33,8 +33,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let service = state.inventory_service.clone();
     let nats_client_clone = nats_client.clone();
     tokio::spawn(async move {
-        if let Err(e) = inventory_service::infrastructure::messaging::nats::run_nats_subscriber(nats_client_clone, service).await {
-            tracing::error!(error = %e, "NATS subscriber background task failed");
+        let mut retry_delay = std::time::Duration::from_secs(1);
+        loop {
+            match inventory_service::infrastructure::messaging::nats::run_nats_subscriber(nats_client_clone.clone(), service.clone()).await {
+                Ok(_) => {
+                    tracing::warn!("NATS subscriber stream ended unexpectedly. Restarting subscription in {:?}", retry_delay);
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, "NATS subscriber background task failed. Retrying in {:?}", retry_delay);
+                }
+            }
+            tokio::time::sleep(retry_delay).await;
+            retry_delay = std::cmp::min(retry_delay * 2, std::time::Duration::from_secs(60));
         }
     });
 

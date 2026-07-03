@@ -2,9 +2,9 @@
 **/target/
 **/target_*/
 
-# Generated Certificates in Deploy
-/backend/deploy/certs/*
-!/backend/deploy/certs/.gitkeep
+# Generated Certificates
+/backend/certs/*
+!/backend/certs/.gitkeep
 
 # IDEs and OS files
 .vscode/

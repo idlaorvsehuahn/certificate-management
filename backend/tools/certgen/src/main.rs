@@ -8,7 +8,7 @@ use time::{Duration, OffsetDateTime};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    let mut certs_dir_str = "deploy/certs".to_string(); // Default output dir
+    let mut certs_dir_str = "certs".to_string(); // Default output dir
     
     // Parse arguments
     let mut i = 1;
