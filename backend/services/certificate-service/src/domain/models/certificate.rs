@@ -33,6 +33,7 @@ impl CertificateRow {
             status: CertificateStatus::try_from(self.status)?,
             san_dns_names,
             pem: self.pem,
+            parsed: None,
         })
     }
 

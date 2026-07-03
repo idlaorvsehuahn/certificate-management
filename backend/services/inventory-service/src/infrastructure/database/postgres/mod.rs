@@ -123,32 +123,18 @@ impl InventoryRepository for PostgresInventoryRepository {
     }
 
     async fn get_dashboard_stats(&self) -> AppResult<DashboardStatsResponse> {
-        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM inventory_certificates")
-            .fetch_one(&self.db_pool)
-            .await?;
-
-        let active: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM inventory_certificates WHERE status = 'ACTIVE'")
-            .fetch_one(&self.db_pool)
-            .await?;
-
-        let expired: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM inventory_certificates WHERE status = 'EXPIRED'")
-            .fetch_one(&self.db_pool)
-            .await?;
-
-        let revoked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM inventory_certificates WHERE status = 'REVOKED'")
-            .fetch_one(&self.db_pool)
-            .await?;
-
         let now = Utc::now();
         let thirty_days_hence = now + Duration::days(30);
 
-        let expiring_soon: i64 = sqlx::query_scalar(
+        let row: (i64, i64, i64, i64, i64) = sqlx::query_as(
             r#"
-            SELECT COUNT(*)
+            SELECT 
+                COUNT(*),
+                COUNT(*) FILTER (WHERE status = 'ACTIVE'),
+                COUNT(*) FILTER (WHERE status = 'EXPIRED'),
+                COUNT(*) FILTER (WHERE status = 'REVOKED'),
+                COUNT(*) FILTER (WHERE status = 'ACTIVE' AND expires_at >= $1 AND expires_at <= $2)
             FROM inventory_certificates
-            WHERE status = 'ACTIVE'
-              AND expires_at >= $1
-              AND expires_at <= $2
             "#,
         )
         .bind(now)
@@ -157,11 +143,11 @@ impl InventoryRepository for PostgresInventoryRepository {
         .await?;
 
         Ok(DashboardStatsResponse {
-            total_certificates: total,
-            active_certificates: active,
-            expired_certificates: expired,
-            revoked_certificates: revoked,
-            expiring_soon_certificates: expiring_soon,
+            total_certificates: row.0,
+            active_certificates: row.1,
+            expired_certificates: row.2,
+            revoked_certificates: row.3,
+            expiring_soon_certificates: row.4,
         })
     }
 }

@@ -2,6 +2,7 @@ use tracing::info;
 use uuid::Uuid;
 use chrono::{Duration, Utc};
 
+use shared::utils::{total_pages, validate_list_query};
 use crate::{
     dto::inventory::{
         InventoryListQuery, InventoryListResponse, DashboardStatsResponse, InventorySummaryResponse,
@@ -49,7 +50,7 @@ where
     ) -> AppResult<InventoryListResponse> {
         let page = query.page.unwrap_or(DEFAULT_PAGE);
         let page_size = query.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
-        validate_list_query(page, page_size)?;
+        validate_list_query(page, page_size, MAX_PAGE_SIZE).map_err(AppError::Validation)?;
 
         let mut expires_before = query.expires_before;
         if let Some(days) = query.expiring_days {
@@ -81,29 +82,7 @@ where
     }
 }
 
-fn validate_list_query(page: u32, page_size: u32) -> AppResult<()> {
-    if page == 0 {
-        return Err(AppError::Validation(
-            "page must be greater than 0".to_string(),
-        ));
-    }
 
-    if page_size == 0 || page_size > MAX_PAGE_SIZE {
-        return Err(AppError::Validation(format!(
-            "page_size must be between 1 and {MAX_PAGE_SIZE}"
-        )));
-    }
-
-    Ok(())
-}
-
-fn total_pages(total_items: i64, page_size: u32) -> u32 {
-    if total_items == 0 {
-        return 0;
-    }
-
-    ((total_items as f64) / f64::from(page_size)).ceil() as u32
-}
 
 #[cfg(test)]
 mod tests {

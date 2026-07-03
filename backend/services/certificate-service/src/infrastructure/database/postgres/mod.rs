@@ -74,20 +74,7 @@ impl CertificateRepository for PostgresCertificateRepository {
             return Ok(None);
         };
 
-        let san_dns_names = sqlx::query_as::<_, CertificateSanRow>(
-            r#"
-            SELECT dns_name
-            FROM certificate_sans
-            WHERE certificate_id = $1
-            ORDER BY id ASC
-            "#,
-        )
-        .bind(id)
-        .fetch_all(&self.db_pool)
-        .await?
-        .into_iter()
-        .map(|row| row.dns_name)
-        .collect();
+        let san_dns_names = find_sans(&self.db_pool, id).await?;
 
         Ok(Some(
             certificate
@@ -129,10 +116,40 @@ impl CertificateRepository for PostgresCertificateRepository {
         .fetch_one(&self.db_pool)
         .await?;
 
+        #[derive(sqlx::FromRow)]
+        struct SanRow {
+            certificate_id: Uuid,
+            dns_name: String,
+        }
+
+        let ids: Vec<Uuid> = certificates.iter().map(|c| c.id).collect();
+        let mut san_map = std::collections::HashMap::new();
+
+        if !ids.is_empty() {
+            let san_rows = sqlx::query_as::<_, SanRow>(
+                r#"
+                SELECT certificate_id, dns_name
+                FROM certificate_sans
+                WHERE certificate_id = ANY($1)
+                ORDER BY id ASC
+                "#,
+            )
+            .bind(&ids)
+            .fetch_all(&self.db_pool)
+            .await?;
+
+            for row in san_rows {
+                san_map
+                    .entry(row.certificate_id)
+                    .or_insert_with(Vec::new)
+                    .push(row.dns_name);
+            }
+        }
+
         let mut items = Vec::with_capacity(certificates.len());
 
         for certificate in certificates {
-            let san_dns_names = find_sans(&self.db_pool, certificate.id).await?;
+            let san_dns_names = san_map.remove(&certificate.id).unwrap_or_default();
             items.push(
                 certificate
                     .into_summary(san_dns_names)

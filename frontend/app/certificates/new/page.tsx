@@ -21,10 +21,13 @@ const issueSchema = z.object({
     .min(1, 'Common Name (Subject) is required')
     .max(64, 'Common Name cannot exceed 64 characters'),
   validity_days: z
-    .number()
-    .int('Validity must be a whole number')
-    .min(1, 'Validity must be at least 1 day')
-    .max(825, 'Validity cannot exceed 825 days (approx. 2.2 years)'),
+    .number({
+      message: 'Validity period is required',
+    })
+    .refine((val) => !isNaN(val), 'Validity period is required')
+    .refine((val) => Number.isInteger(val), 'Validity must be a whole number')
+    .refine((val) => val >= 1, 'Validity must be at least 1 day')
+    .refine((val) => val <= 825, 'Validity cannot exceed 825 days (approx. 2.2 years)'),
   san_names_raw: z.string().optional(),
 });
 
@@ -228,14 +231,29 @@ export default function IssueCertificatePage() {
                 suppressHydrationWarning
               />
 
-              <Input
-                label="Validity Period (Days)"
-                type="number"
-                placeholder="e.g. 365"
-                error={errors.validity_days?.message}
-                {...register('validity_days', { valueAsNumber: true })}
-                suppressHydrationWarning
-              />
+              <div className="flex flex-col gap-1 w-full">
+                <Input
+                  label="Validity Period (Days)"
+                  type="number"
+                  min={1}
+                  max={825}
+                  onInput={(e) => {
+                    const val = e.currentTarget.value;
+                    if (val.length > 3) {
+                      e.currentTarget.value = val.slice(0, 3);
+                    }
+                  }}
+                  placeholder="e.g. 365 (Max 825)"
+                  error={errors.validity_days?.message}
+                  {...register('validity_days', { valueAsNumber: true })}
+                  suppressHydrationWarning
+                />
+                {!errors.validity_days && (
+                  <span className="text-[10px] text-cream/40 font-mono mt-0.5">
+                    Maximum allowed validity period is 825 days (~2.2 years) due to CA compliance.
+                  </span>
+                )}
+              </div>
 
               <Input
                 label="Subject Alternative Names (SANs) - Comma Separated"
