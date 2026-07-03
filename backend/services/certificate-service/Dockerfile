@@ -1,5 +1,5 @@
 # Builder Stage
-FROM rust:1.85-slim AS builder
+FROM rust:latest-slim AS builder
 
 WORKDIR /usr/src/app
 
