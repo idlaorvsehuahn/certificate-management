@@ -20,9 +20,7 @@ pub fn build_router(state: AppState) -> Router {
         .allow_headers(Any);
 
     Router::new()
-        .route("/health/live", get(health::liveness))
-        .route("/health/ready", get(health::readiness))
-        .route("/health", get(health::readiness))
+        .route("/health", get(health::health_check))
         .route(
             "/inventory",
             get(inventory::list_certificates),

@@ -59,7 +59,10 @@ pub async fn serve_tls(
                             let req = req.map(axum::body::Body::new);
                             
                             use tower::Service;
-                            let mut svc = make_service.call(peer_addr).await.unwrap();
+                            let mut svc = match make_service.call(peer_addr).await {
+                                Ok(s) => s,
+                                Err(e) => match e {},
+                            };
                             svc.call(req).await
                         }
                     });

@@ -58,14 +58,21 @@ pub async fn metrics_handler() -> impl IntoResponse {
     
     if let Err(e) = encoder.encode(&metric_families, &mut buffer) {
         tracing::error!("failed to encode prometheus metrics: {}", e);
-        return Response::builder()
-            .status(500)
-            .body(axum::body::Body::from("Internal Server Error"))
-            .unwrap();
+        let mut response = Response::new(axum::body::Body::from("Internal Server Error"));
+        *response.status_mut() = axum::http::StatusCode::INTERNAL_SERVER_ERROR;
+        return response;
     }
 
-    Response::builder()
+    match Response::builder()
         .header(header::CONTENT_TYPE, "text/plain; version=0.0.4")
         .body(axum::body::Body::from(buffer))
-        .unwrap()
+    {
+        Ok(res) => res,
+        Err(e) => {
+            tracing::error!("failed to build metrics response: {}", e);
+            let mut response = Response::new(axum::body::Body::empty());
+            *response.status_mut() = axum::http::StatusCode::INTERNAL_SERVER_ERROR;
+            response
+        }
+    }
 }
