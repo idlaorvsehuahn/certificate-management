@@ -1,0 +1,20 @@
+# Ignore cargo build artifacts
+target/
+target_cli/
+target_test/
+target_build/
+target_tmp/
+target_run/
+
+# Ignore generated dev keys and certs
+deploy/certs/*.crt
+deploy/certs/*.key
+deploy/certs/*.pem
+
+# Ignore Git directory
+.git
+.gitignore
+
+# Ignore local environment variables
+.env
+.env.*

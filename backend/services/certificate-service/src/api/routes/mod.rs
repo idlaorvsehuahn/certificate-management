@@ -5,6 +5,7 @@ use axum::{
 use tower_http::{
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
     trace::TraceLayer,
+    cors::{Any, CorsLayer},
 };
 
 use crate::{
@@ -13,6 +14,11 @@ use crate::{
 };
 
 pub fn build_router(state: AppState) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     Router::new()
         .route("/health/live", get(health::liveness))
         .route("/health/ready", get(health::readiness))
@@ -24,6 +30,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/certificates/{id}", get(certificates::get_certificate))
         .route("/metrics", get(shared::telemetry::metrics::metrics_handler))
         .with_state(state)
+        .layer(cors)
         .layer(axum::middleware::from_fn(shared::telemetry::metrics::track_metrics))
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
