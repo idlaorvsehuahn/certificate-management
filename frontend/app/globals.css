@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070706;
+  --foreground: #F2EDE4;
+  --gold: #C9922A;
+  --gold-12: rgba(201, 146, 42, 0.12);
+  --gold-20: rgba(201, 146, 42, 0.20);
+  --alert: #C5311A;
+}
+
+@theme {
+  --color-void: #070706;
+  --color-cream: #F2EDE4;
+  --color-gold: #C9922A;
+  --color-gold-12: rgba(201, 146, 42, 0.12);
+  --color-gold-20: rgba(201, 146, 42, 0.20);
+  --color-alert: #C5311A;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+}

@@ -1,0 +1,396 @@
+# Build the Next.js Frontend
+
+The backend architecture has been completed.
+
+I now want to build the frontend described in Assignment 3.
+
+The frontend should consume the existing Rust backend and demonstrate secure API integration.
+
+Do not redesign the backend.
+
+Build the frontend around the existing APIs.
+
+---
+
+# Technology Stack
+
+Use:
+
+* Next.js (App Router)
+* TypeScript
+* React
+* Tailwind CSS
+* React Query (TanStack Query)
+* Axios
+* Zod
+* React Hook Form
+
+Enable strict TypeScript mode.
+
+Follow modern Next.js best practices.
+
+---
+
+# Goal
+
+This frontend is intended to demonstrate:
+
+* Server Side Rendering (SSR)
+* Secure API communication
+* Clean component architecture
+* Type safety
+* Reusable UI
+* Production-ready project organization
+
+The UI should be simple and professional.
+
+No unnecessary animations.
+
+---
+
+# Project Structure
+
+Organize the application using feature-based modules.
+
+Example:
+
+```text
+app/
+
+    inventory/
+
+    certificates/
+
+components/
+
+    dashboard/
+
+    certificates/
+
+    ui/
+
+lib/
+
+    api/
+
+    hooks/
+
+    utils/
+
+types/
+
+services/
+```
+
+Avoid placing everything inside one folder.
+
+---
+
+# Environment Variables
+
+Use environment variables for API URLs.
+
+Example:
+
+```
+NEXT_PUBLIC_CERTIFICATE_API=
+
+NEXT_PUBLIC_INVENTORY_API=
+```
+
+Never hardcode URLs.
+
+---
+
+# Inventory Page
+
+Implement:
+
+```
+/inventory
+```
+
+This page should be rendered using **Server Side Rendering (SSR)**.
+
+Fetch certificate data from the Inventory Service.
+
+Display:
+
+* Certificate Subject
+* Issuer
+* Status
+* Expiration Date
+
+Each row should be clickable.
+
+---
+
+# Certificate Details
+
+Clicking a certificate opens
+
+```
+/inventory/[id]
+```
+
+Display:
+
+* Subject
+* Issuer
+* Status
+* Expiration
+* Created Date
+
+Use server components where appropriate.
+
+---
+
+# Dashboard
+
+Create a reusable dashboard.
+
+Display:
+
+* Total Certificates
+* Active Certificates
+* Revoked Certificates
+* Certificates Expiring Within 30 Days
+
+These values should come from the Inventory Service.
+
+---
+
+# Search
+
+Implement:
+
+Search by Subject
+
+Search by Issuer
+
+Status filter
+
+Expiration filter
+
+The UI should consume the Inventory Service filtering APIs.
+
+---
+
+# Pagination
+
+Implement reusable pagination.
+
+The backend already supports pagination.
+
+The frontend should consume it.
+
+---
+
+# Certificate Issuance
+
+Create a page:
+
+```
+/certificates/new
+```
+
+Allow the user to issue a certificate.
+
+Form fields:
+
+Subject
+
+Issuer
+
+Validity
+
+SAN entries
+
+Use:
+
+React Hook Form
+
+Zod validation
+
+On success:
+
+Navigate back to Inventory.
+
+---
+
+# API Layer
+
+Create a reusable API client.
+
+Do not call Axios directly inside components.
+
+Instead:
+
+```
+services/
+
+    certificate-api.ts
+
+    inventory-api.ts
+```
+
+Expose typed functions.
+
+---
+
+# React Query
+
+Use TanStack Query.
+
+Examples:
+
+Inventory list
+
+Certificate details
+
+Dashboard
+
+Avoid duplicate API requests.
+
+---
+
+# Error Handling
+
+Implement reusable:
+
+Loading states
+
+Empty states
+
+Error states
+
+Toast notifications
+
+---
+
+# TLS
+
+The frontend must communicate over HTTPS.
+
+If using self-signed certificates during development, document the setup.
+
+No authentication is required.
+
+---
+
+# UI Components
+
+Create reusable components.
+
+Examples:
+
+Button
+
+Input
+
+Card
+
+Table
+
+Badge
+
+Pagination
+
+Stat Card
+
+Search Bar
+
+Do not duplicate UI code.
+
+---
+
+# Styling
+
+Use Tailwind CSS.
+
+Keep the design minimal.
+
+Professional.
+
+Readable.
+
+Responsive.
+
+---
+
+# Type Safety
+
+Create shared TypeScript interfaces.
+
+Avoid using:
+
+```
+any
+```
+
+Use proper DTOs matching the backend responses.
+
+---
+
+# Performance
+
+Use:
+
+SSR where appropriate
+
+React Query caching
+
+Server Components where beneficial
+
+Client Components only when necessary.
+
+---
+
+# README
+
+Document:
+
+How to start the frontend
+
+Environment variables
+
+HTTPS setup
+
+How it communicates with the backend
+
+Project structure
+
+---
+
+# Code Quality
+
+Keep components small.
+
+Prefer composition.
+
+Avoid deeply nested JSX.
+
+Separate:
+
+Presentation
+
+Data fetching
+
+Business logic
+
+---
+
+# Goal
+
+The finished frontend should look like a production internal dashboard for a Certificate Management Platform.
+
+It should clearly demonstrate:
+
+* Next.js SSR
+* Secure backend communication
+* Clean architecture
+* Type safety
+* Reusable components
+* Professional code organization
+
+Implement incrementally and explain major design decisions before coding.

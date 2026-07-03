@@ -1,0 +1,385 @@
+# Refactor the Architecture to an Event-Driven Microservice Design
+
+The current implementation treats the Inventory Service as a copy of the Certificate Service. I want to refactor the project into a production-quality event-driven microservice architecture that follows Domain-Driven Design principles where appropriate while remaining simple and maintainable.
+
+This project is intended to demonstrate how a Senior Rust Backend Engineer would design a backend system.
+
+---
+
+# High-Level Architecture
+
+The system consists of two independent microservices.
+
+## 1. Certificate Service (Write Service)
+
+The Certificate Service is the **single source of truth** for certificate data.
+
+Responsibilities:
+
+* Accept certificate issuance requests.
+* Validate incoming requests.
+* Generate a dummy X.509 certificate.
+* Persist the complete certificate record.
+* Publish domain events.
+* Own the complete certificate lifecycle.
+* Never depend on another microservice for its core business logic.
+
+Its PostgreSQL database should contain the complete certificate record, including fields such as:
+
+* id
+* subject
+* issuer
+* serial_number
+* certificate_pem
+* expiration
+* issued_at
+* status
+* SAN entries
+* audit information
+* timestamps
+
+---
+
+## 2. Inventory Service (Read Service)
+
+The Inventory Service is **not another source of truth**.
+
+It owns a denormalized read model optimized for queries.
+
+Responsibilities:
+
+* List certificates
+* Search certificates
+* Filter certificates
+* Dashboard statistics
+* Expiring certificate reports
+
+Its database should contain only the fields necessary for fast read operations, for example:
+
+* id
+* subject
+* issuer
+* status
+* expires_at
+* created_at
+
+Do **not** duplicate:
+
+* certificate PEM
+* CSR
+* serial generation details
+* audit logs
+* private key references
+* certificate generation logic
+
+The Inventory Service should never generate certificates.
+
+---
+
+# Communication
+
+The Certificate Service must **never call the Inventory Service REST API directly**.
+
+Instead, all service-to-service communication must be asynchronous using **NATS**.
+
+Workflow:
+
+Client
+
+↓
+
+Certificate Service
+
+↓
+
+Store certificate in PostgreSQL
+
+↓
+
+Commit transaction
+
+↓
+
+Publish `certificate.issued` event to NATS
+
+↓
+
+Inventory Service subscribes
+
+↓
+
+Update local read model
+
+Future events:
+
+* certificate.issued
+* certificate.renewed
+* certificate.revoked
+* certificate.deleted
+
+Inventory must build and maintain its own database entirely from these domain events.
+
+No synchronous communication between the services should exist.
+
+---
+
+# Event Payload
+
+Publish only the information Inventory requires.
+
+Example:
+
+```json
+{
+  "event": "certificate.issued",
+  "certificate_id": "...",
+  "subject": "...",
+  "issuer": "...",
+  "status": "ACTIVE",
+  "expires_at": "...",
+  "created_at": "..."
+}
+```
+
+Do not expose unnecessary internal data.
+
+---
+
+# Architectural Principles
+
+The project should follow a **Layered Architecture** with dependency inversion for external systems.
+
+Request flow:
+
+HTTP Request
+
+↓
+
+Handler
+
+↓
+
+Service
+
+↓
+
+Repository Trait
+
+↓
+
+Repository Implementation (SQLx)
+
+↓
+
+PostgreSQL
+
+The Service layer must never know about SQLx.
+
+Similarly:
+
+Service
+
+↓
+
+EventPublisher Trait
+
+↓
+
+NatsPublisher
+
+↓
+
+NATS
+
+The Service layer must never know about async-nats.
+
+External technologies should always be hidden behind interfaces (traits).
+
+---
+
+# Ports & Adapters
+
+Introduce abstractions for all external dependencies.
+
+Examples:
+
+Repositories
+
+```rust
+trait CertificateRepository
+trait InventoryRepository
+```
+
+Messaging
+
+```rust
+trait EventPublisher
+trait EventSubscriber
+```
+
+Implementations
+
+```rust
+PostgresCertificateRepository
+PostgresInventoryRepository
+
+NatsPublisher
+NatsSubscriber
+```
+
+Business logic should depend only on these abstractions.
+
+This allows replacing:
+
+* PostgreSQL
+* NATS
+* future Kafka/RabbitMQ
+
+without changing business logic.
+
+---
+
+# Domain Events
+
+Create strongly typed Rust structs for events.
+
+Example:
+
+```rust
+CertificateIssuedEvent
+CertificateRenewedEvent
+CertificateRevokedEvent
+```
+
+Avoid publishing raw JSON strings directly from the business layer.
+
+Serialization should happen inside the messaging implementation.
+
+---
+
+# Transaction Consistency
+
+Events must only be published **after** the database transaction has been committed successfully.
+
+Never publish events for failed transactions.
+
+If possible, explain how the Transactional Outbox Pattern could improve reliability in a production system, even if it is not fully implemented in this assignment.
+
+---
+
+# Folder Structure
+
+Keep the layered structure but isolate infrastructure concerns.
+
+Example:
+
+```text
+src/
+
+api/
+handlers/
+routes/
+middleware/
+
+application/
+services/
+
+domain/
+models/
+events/
+
+ports/
+repository.rs
+publisher.rs
+
+infrastructure/
+
+database/
+postgres/
+
+messaging/
+nats/
+
+certificate/
+
+dto/
+
+config/
+
+telemetry/
+
+error/
+
+utils/
+```
+
+Do not create unnecessary abstractions beyond these.
+
+---
+
+# Coding Standards
+
+Follow idiomatic Rust.
+
+Use:
+
+* Axum
+* Tokio
+* SQLx
+* Serde
+* thiserror
+* tracing
+* tower-http
+* validator
+* rustls
+* async-nats
+
+Avoid:
+
+* unwrap()
+* expect()
+* giant functions
+* business logic inside handlers
+* SQL inside handlers
+* NATS code inside services
+
+Handlers should only orchestrate requests and responses.
+
+Business logic belongs in Services.
+
+Repositories only access the database.
+
+Messaging implementations only publish/consume events.
+
+---
+
+# Goal
+
+The resulting project should demonstrate:
+
+* Layered Architecture
+* Dependency Inversion
+* Repository Pattern
+* Event-Driven Architecture
+* NATS Messaging
+* Loose Coupling
+* Production-ready Rust practices
+* Clear separation of concerns
+* Extensibility
+* Testability
+
+This project should look like something that could realistically be deployed in production and discussed confidently during a senior backend interview.
+
+---
+
+# Implementation Instructions
+
+Before making changes:
+
+1. Explain the architectural changes you plan to make.
+2. Refactor incrementally.
+3. Preserve existing functionality wherever possible.
+4. Do not rewrite everything at once.
+5. Keep commits logically separated by responsibility.
+6. Explain important design decisions and trade-offs as you go.
+7. If you believe there is a better approach, explain the trade-offs before implementing it.

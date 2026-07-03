@@ -1,0 +1,184 @@
+# Repository Integration
+
+The frontend should be added to the existing monorepo.
+
+This repository is a Rust Cargo workspace for backend crates, but the frontend is **not** part of the Cargo workspace.
+
+Do not modify the Cargo workspace members.
+
+Instead, create a separate Node.js application inside the repository.
+
+Target structure:
+
+```text
+certificate-platform/
+
+Cargo.toml
+
+services/
+
+crates/
+
+tools/
+
+deploy/
+
+docs/
+
+client/
+
+    web/
+
+        package.json
+
+        next.config.ts
+
+        tsconfig.json
+
+        app/
+
+        components/
+
+        lib/
+
+        public/
+```
+
+The Next.js application should live under:
+
+```text
+client/web
+```
+
+It should remain completely independent from Cargo.
+
+---
+
+# Repository Responsibilities
+
+Rust Workspace
+
+Responsible for:
+
+* Certificate Service
+* Inventory Service
+* Shared crates
+* CA Engine
+* Certgen
+
+Node Workspace
+
+Responsible for:
+
+* Next.js frontend
+* React
+* Tailwind
+* React Query
+* API integration
+
+The frontend must not depend on Rust crates.
+
+Communication should happen exclusively through HTTPS APIs.
+
+---
+
+# Development Workflow
+
+Backend:
+
+```bash
+cargo build
+cargo run -p certificate-service
+cargo run -p inventory-service
+```
+
+Frontend:
+
+```bash
+cd client/web
+
+npm install
+
+npm run dev
+```
+
+---
+
+# Docker
+
+The frontend should eventually have its own Dockerfile.
+
+Example:
+
+```text
+client/
+
+    web/
+
+        Dockerfile
+```
+
+Later, docker-compose.yml may optionally include:
+
+* postgres
+* nats
+* certificate-service
+* inventory-service
+* nextjs frontend
+
+Do not implement frontend Docker deployment yet unless required.
+
+---
+
+# API Communication
+
+The frontend communicates only with public backend APIs.
+
+It must never connect directly to:
+
+* PostgreSQL
+* NATS
+
+It communicates only with:
+
+Certificate Service
+
+Inventory Service
+
+using HTTPS.
+
+Internal NATS communication remains completely hidden from the frontend.
+
+---
+
+# Future Goal
+
+The repository should become a complete Certificate Management Platform.
+
+```text
+certificate-platform/
+
+Backend
+
+↓
+
+Rust Microservices
+
+↓
+
+NATS
+
+↓
+
+PostgreSQL
+
+↑
+
+HTTPS
+
+↓
+
+Next.js Frontend
+```
+
+Everything remains inside a single Git repository while maintaining clear separation between backend, frontend, deployment, infrastructure, and tooling.

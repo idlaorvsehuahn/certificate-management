@@ -1,0 +1,34 @@
+Architecting a Secure Microservice (System Design Assessment)
+You must design a certificate issuance and inventory microservice. The service must:
+•	Expose APIs (preferably using Rust) to:
+o	Issue X.509 certificates (Dummy)
+o	Store certificate metadata in PostgreSQL
+o	Return metadata to clients
+•	Run as a containerized service on Kubernetes.
+•	Support mTLS for all internal service-to-service communication.
+•	Expose a secure API that a Next.js frontend will consume.
+•	Provide audit logs and operational metrics.
+________________________________________
+What the candidate must produce/discuss:
+1. High-level architecture
+•	Rust microservice design (async runtime, library choices, modules, API boundaries)
+•	API design and certificate lifecycle flows
+•	PostgreSQL schema (ERD) & indexing strategy
+•	Kubernetes components: Deployment, ConfigMaps, Secrets, Service Mesh, Ingress, autoscaling
+•	Container image design and security
+2. TLS/mTLS & certificate flow
+•	How mTLS works in microservices
+•	How certificate rotation should be handled
+•	How to integrate HSM/KMS for key storage
+•	Certificate issuance workflow (CSR → signing → storage)
+
+
+3. Next.js integration
+•	Discuss API consumption patterns
+•	SSR vs client-side rendering tradeoffs
+•	Secure cookie/session/token management
+4. Observability
+•	Logging, metrics, tracing
+•	Kubernetes probes
+•	Rust performance tuning
+

@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  nats:
+    image: nats:2.10
+    container_name: nats-dev
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+volumes:
+  postgres_data:

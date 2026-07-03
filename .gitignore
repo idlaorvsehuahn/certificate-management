@@ -1,0 +1,21 @@
+# Rust / Cargo
+**/target/
+**/target_*/
+
+# Generated Certificates in Deploy
+/backend/deploy/certs/*
+!/backend/deploy/certs/.gitkeep
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Frontend Node Modules & Build (Fallback in case subdirectory gitignore is bypassed)
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+.env.local
+.env.*.local

@@ -1,0 +1,10 @@
+[package]
+name = "ca-engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rcgen = { workspace = true }
+time = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
