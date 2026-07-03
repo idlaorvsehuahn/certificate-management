@@ -22,7 +22,7 @@ COPY tools/ tools/
 RUN cargo build --release --bin certificate-service
 
 # Runner Stage
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Install runtime dependencies (CA certificates for secure TLS and libssl)
 RUN apt-get update && apt-get install -y \
